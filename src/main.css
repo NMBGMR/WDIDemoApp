@@ -1,0 +1,26 @@
+.hcontainer {
+    display: flex;
+}
+.divL, .divR {
+    box-sizing: border-box;
+    padding: 10px;
+}
+.divL {
+    background: #ffe9c6;
+    /* OPTIONAL WIDTH
+    width: 40% */
+    width: 60%
+}
+.divR {
+    background: #ffdad8;
+    /* OPTIONAL WIDTH
+    width: 60% */
+}
+.leaflet-container {
+    width: 100%;
+    height: 400px;
+}
+
+.chart {
+    background: #ffffff;
+}
