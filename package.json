@@ -4,18 +4,19 @@
   "private": true,
   "dependencies": {
     "@material-ui/core": "^4.9.8",
+    "@nivo/line": "^0.61.1",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
     "axios": "^0.19.2",
+    "fetch": "^1.1.0",
     "leaflet": "^1.6.0",
+    "nivo": "^0.31.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-leaflet": "^2.6.3",
     "react-router-dom": "^5.1.2",
-    "react-scripts": "^3.4.1",
-    "react-vis": "^1.11.7",
-    "recharts": "^1.8.5"
+    "react-scripts": "^3.4.1"
   },
   "scripts": {
     "start": "react-scripts start",

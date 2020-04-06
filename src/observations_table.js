@@ -14,7 +14,7 @@ function ObservationsTable(props){
         const data = props.items ? props.items : []
         const classes = useStyles();
     const [page, setPage] = React.useState(0);
-    const [rowsPerPage, setRowsPerPage] = React.useState(5);
+    const [rowsPerPage, setRowsPerPage] = React.useState(10);
 
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
@@ -47,7 +47,7 @@ function ObservationsTable(props){
                                         key={index}
                                               hover>
                                         <TableCell style={dense}>{r.phenomenonTime}</TableCell>
-                                        <TableCell style={dense}>{r.result}</TableCell>
+                                        <TableCell style={dense}>{r.result.toFixed(2)}</TableCell>
                                     </TableRow>
                                 )})
                             }

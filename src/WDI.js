@@ -8,6 +8,7 @@ import DatastreamChart from './datastream_chart'
 import ThingsMap from './map'
 import ObservationsTable from "./observations_table";
 import LocationsTable from "./locations_table";
+import retrieveItems from './util'
 
 
 class WDI extends Component {
@@ -43,28 +44,11 @@ class WDI extends Component {
     }
 
     handleDSSelect(selection){
-
         if(selection){
             if (selection.isSelected){
-
-
-                axios.get(selection.row.link+'/ObservedProperty').then(
-                    res => {
-                        const obs = res.data.value
-
-
-
-                        this.setState({observations: obs})
-                    }
-                )
-                axios.get(selection.row.link+'/Observations').then(
-                    res => {
-                        const obs = res.data.value
-                        this.setState({observations: obs})
-                    }
-                )
-
-
+                retrieveItems(selection.row.link+'/Observations',
+                    2, // this should be an editable attribute
+                    (result)=>{this.setState({observations: result})})
             }else{
                 this.setState({observations: null})
             }
@@ -73,10 +57,12 @@ class WDI extends Component {
         }
     }
 
-
     render() {
         return (
             <div>
+                <div>
+                    <h1 align='center'>New Mexico Water Data Demo App</h1>
+                </div>
                 <div className="hcontainer" style={{ marginTop: 50}}>
                     <div className="divL">
                         <h3>MAP</h3>
@@ -99,7 +85,7 @@ class WDI extends Component {
                                     let things = res.data.value.map(v => ({id: v['@iot.id'],
                                         name: v.name,
                                         link:v['@iot.selfLink'],
-                                        point_id:v.properties['@nmbgmr.point_id'],
+                                        point_id:v.properties ? v.properties['@nmbgmr.point_id']: ''
                                     }))
 
                                     this.setState({things: things,
@@ -137,15 +123,11 @@ class WDI extends Component {
                     </div>
 
                 </div>
-                <div className="hcontainer">
-                    <div className='divL'>
 
-                    </div>
-                    <div className='divR'>
-
-                    </div>
-
+                <div>
+                    <p align='center'><b>Developed by Jake Ross 2020</b></p>
                 </div>
+
             </div>
         );
     }

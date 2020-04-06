@@ -6,9 +6,12 @@ import 'leaflet/dist/leaflet.css'
 
 // import * as nmbg from './nmbg_locations.json'
 // import * as ngwmn from './usgs_ngwmn_locations.json'
-const LOCAL=false
+import * as nmbg from './local_locations.json'
+const LOCAL = false
 
 const { BaseLayer, Overlay } = LayersControl
+
+
 
 class ThingsMap extends Component{
     state = {
@@ -20,11 +23,12 @@ class ThingsMap extends Component{
 
 
     componentDidMount() {
+            // is local
         if (LOCAL){
-            this.setState({nmbg_data: nmbg.default,
-                                 usgs_ngwmn_data: ngwmn.default})
+            this.setState({nmbg_data: nmbg.default})
+
         }else{
-            axios.get('https://storage.googleapis.com/download/storage/v1/b/waterdatainitiative/o/locations.json?&alt=media',).then(success =>{
+            axios.get('https://storage.googleapis.com/download/storage/v1/b/waterdatainitiative/o/nmbg_locations.json?&alt=media',).then(success =>{
                 this.setState({nmbg_data: success.data})
             })
             axios.get('https://storage.googleapis.com/download/storage/v1/b/waterdatainitiative/o/usgs_ngwmn_locations.json?&alt=media',).then(success =>{
@@ -38,6 +42,8 @@ class ThingsMap extends Component{
         return (
             <Map center={this.props.center}
                  zoom={this.props.zoom}
+                 minZoom={4}
+                 maxZoom={20}
                  ref={this.mapRef}
             >
                 <TileLayer
@@ -46,7 +52,7 @@ class ThingsMap extends Component{
                 />
 
                 <LayersControl position="topright">
-                    <BaseLayer checked name='OpenStreetMap'>
+                    <BaseLayer name='OpenStreetMap'>
                         <TileLayer
                             attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -78,7 +84,7 @@ class ThingsMap extends Component{
                        />
                     </BaseLayer>
 
-                    <BaseLayer name='Stamen.Terrain'>
+                    <BaseLayer checked name='Stamen.Terrain'>
                         <TileLayer
                             url='https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.{ext}'
                         attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -101,6 +107,22 @@ class ThingsMap extends Component{
                                     properties={l}/>
                             )):null}
                         </LayerGroup>
+                    </Overlay>
+                    <Overlay checked name="WaterLevelCABQ">
+                        <LayerGroup>
+                            {this.state.nmbg_data ? this.state.nmbg_data.features.filter(l=>(
+                                l.properties[0].name=='WaterLevels'
+                            )).map((l, index) => (
+                                <CircleMarker
+                                    radius={5}
+                                    key={index}
+                                    color={'#fce066'}
+                                    onClick={this.props.onSelect}
+                                    center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
+                                    properties={l}/>
+                            )): null}
+                        </LayerGroup>
+
                     </Overlay>
                     <Overlay checked name="WaterLevelPressure">
                         <LayerGroup>

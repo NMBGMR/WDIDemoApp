@@ -10,7 +10,7 @@ class LocationsTable extends Component{
 
         const columns = [{'label': 'ID', 'key': 'id'},
                         {'label': 'Name', 'key': 'name'},
-                        {'label': 'Description', 'key': 'description'},
+                        // {'label': 'Description', 'key': 'description'},
                         {'label':'Lat', 'key': 'lat'},
                         {'label':'Lon', 'key': 'lon'}]
         return (

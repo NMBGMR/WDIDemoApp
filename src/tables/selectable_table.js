@@ -14,7 +14,6 @@ import useStyles from "../styles";
 function SelectableTable(props){
     const classes = useStyles();
 
-    console.info(classes)
     const [selected, setSelected] = React.useState([]);
 
     const labels = props.columns.map((c, i)=>{
