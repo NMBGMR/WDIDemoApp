@@ -4,18 +4,21 @@ import { ResponsiveLine } from '@nivo/line'
 class DatastreamChart extends Component {
     constructor(props) {
         super(props);
-        this.state  = {
-            ylabel: 'DTW (ft bgs)',
-            observations: [],}
     }
-
     render() {
+        var ylabel = ''
+        if (this.props.datastream){
+            ylabel = this.props.datastream.name
+            if (ylabel.startsWith('Depth')){
+                ylabel = 'DTW (ft bgs)'
+            }
+        }
 
         const data = this.props.observations ? this.props.observations.map(obs => ({
             x: new Date(obs.phenomenonTime),
             y: obs.result})) : []
 
-
+        const yreverse = Boolean(ylabel == 'DTW (ft bgs)')
         const dd = [{id: '1', data: data}]
         return (
             <div className='chart'>
@@ -25,7 +28,8 @@ class DatastreamChart extends Component {
                     xScale={{ type: 'time'}}
                     xFormat="time:%Y-%m-%d %H:%M"
                     yFormat={(v)=>(v.toFixed(2))}
-                    yScale={{ type: 'linear', min: 'auto', max: 'auto', stacked: true, reverse: false }}
+                    yScale={{ type: 'linear', min: 'auto', max: 'auto',
+                        stacked: true, reverse: yreverse }}
                     axisTop={null}
                     axisRight={null}
                     gridXValues={null}
@@ -45,7 +49,7 @@ class DatastreamChart extends Component {
                         tickSize: 5,
                         tickPadding: 5,
                         tickRotation: 0,
-                        legend: this.state.ylabel,
+                        legend: ylabel,
                         legendOffset: -60,
                         legendPosition: 'middle'
                     }}

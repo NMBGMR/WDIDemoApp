@@ -26,24 +26,15 @@ class WDI extends Component {
     handleSelect(selection){
         if(selection){
             if (selection.isSelected) {
-                this.setState({thing: selection.row.name})
+                this.setState({ thing: selection.row.name })
                 axios.get(selection.row.link+'/Datastreams').then(
                     res => {
-                        const ds = res.data.value.map(v => ({id: v['@iot.id'],
-                            name: v.name,
-                            unit: v.unitOfMeasurement.name,
-                            link:v['@iot.selfLink']}))
-
-                        this.setState({datastreams: ds})
-                    }
-                )
-            }else {
-                this.setState({datastreams: []})
-            }
-
-        }else{
-            this.setState({datastreams: []})
-        }
+                        this.setState({ datastreams: res.data.value.map(v => ({id: v['@iot.id'],
+                                            name: v.name,
+                                            unit: v.unitOfMeasurement.name,
+                                            link:v['@iot.selfLink']}))})})
+            } else { this.setState({ datastreams: []}) }
+        } else { this.setState({ datastreams: []}) }
     }
 
     handleDSSelect(selection){
@@ -51,16 +42,14 @@ class WDI extends Component {
             if (selection.isSelected){
                 const ep = (this.state.location +'-'+this.state.thing+'-'+selection.row.name).replace(/\s/g, '_')
                 console.debug(ep)
-                retrieveItems(selection.row.link+'/Observations',
+                retrieveItems(selection.row.link+'/Observations?$orderBy=phenomenonTime',
                     2, // this should be an editable attribute
                     (result)=>{this.setState({observations: result,
-                        observationsExportPath: ep})})
-            }else{
-                this.setState({observations: null})
-            }
-        }else{
-            this.setState({observations: null})
-        }
+                                                            observationsExportPath: ep,
+                                                            datastream: selection.row
+                                                            })})
+            } else { this.setState({observations: null, datastream: null, observationsExportPath:null}) }
+        } else { this.setState({observations: null, datastream: null, observationsExportPath:null}) }
     }
 
     render() {
@@ -101,7 +90,9 @@ class WDI extends Component {
                         />
                         <h3>Chart</h3>
                         <div className='chart'>
-                            <DatastreamChart observations={this.state.observations}/>
+                            <DatastreamChart
+                                datastream = {this.state.datastream}
+                                observations={this.state.observations}/>
                         </div>
 
                     </div>
