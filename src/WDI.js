@@ -17,13 +17,16 @@ class WDI extends Component {
         this.state = {
             observations: null,
             datastreams: null,
-            locations: []
+            locations: [],
+            thing: '',
+            location: ''
         }
     }
 
     handleSelect(selection){
         if(selection){
             if (selection.isSelected) {
+                this.setState({thing: selection.row.name})
                 axios.get(selection.row.link+'/Datastreams').then(
                     res => {
                         const ds = res.data.value.map(v => ({id: v['@iot.id'],
@@ -46,9 +49,12 @@ class WDI extends Component {
     handleDSSelect(selection){
         if(selection){
             if (selection.isSelected){
+                const ep = (this.state.location +'-'+this.state.thing+'-'+selection.row.name).replace(/\s/g, '_')
+                console.debug(ep)
                 retrieveItems(selection.row.link+'/Observations',
                     2, // this should be an editable attribute
-                    (result)=>{this.setState({observations: result})})
+                    (result)=>{this.setState({observations: result,
+                        observationsExportPath: ep})})
             }else{
                 this.setState({observations: null})
             }
@@ -70,15 +76,13 @@ class WDI extends Component {
                             center={[34.359593, -106.906871]}
                             zoom={6}
                             onSelect={e => {
-
                                 axios.get(e.target.options.properties.link).then(res => {
                                         this.setState({locations: [{id: res.data['@iot.id'],
                                                 name: res.data['name'],
                                                 description: res.data['description'],
                                                 lat: res.data.location.coordinates[1],
                                                 lon: res.data.location.coordinates[0]
-                                            }]})
-                                        console.log(res.data)
+                                            }], location: res.data['name']})
                                 })
 
                                 axios.get(e.target.options.properties.link+'/Things').then( res =>{
@@ -119,7 +123,9 @@ class WDI extends Component {
                             datastreams={this.state.datastreams}/>
 
                         <h3>Observations</h3>
-                        <ObservationsTable items={this.state.observations}/>
+                        <ObservationsTable
+                            observationsExportPath={this.state.observationsExportPath}
+                            items={this.state.observations}/>
                     </div>
 
                 </div>
