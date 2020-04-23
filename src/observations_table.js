@@ -8,8 +8,7 @@ import TableBody from "@material-ui/core/TableBody";
 import TableContainer from "@material-ui/core/TableContainer";
 import useStyles from "./styles";
 import TablePagination from "@material-ui/core/TablePagination";
-import {CSVLink, CSVDownload} from "react-csv";
-import {save} from 'save-file'
+
 
 
 function ObservationsTable(props){
