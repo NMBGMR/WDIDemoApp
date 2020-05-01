@@ -1,6 +1,6 @@
 
 import React, {Component} from 'react'
-import { Map, Circle, CircleMarker, TileLayer, LayersControl, LayerGroup} from "react-leaflet";
+import { Map, CircleMarker, TileLayer, LayersControl, LayerGroup} from "react-leaflet";
 import axios from 'axios';
 import 'leaflet/dist/leaflet.css'
 
@@ -111,7 +111,7 @@ class ThingsMap extends Component{
                     <Overlay checked name="WaterLevelCABQ">
                         <LayerGroup>
                             {this.state.nmbg_data ? this.state.nmbg_data.features.filter(l=>(
-                                l.properties[0].name=='WaterLevels'
+                                l.properties[0].name === 'WaterLevels'
                             )).map((l, index) => (
                                 <CircleMarker
                                     radius={5}
@@ -127,7 +127,7 @@ class ThingsMap extends Component{
                     <Overlay checked name="WaterLevelPressure">
                         <LayerGroup>
                             {this.state.nmbg_data ? this.state.nmbg_data.features.filter(l=>(
-                                l.properties[0].name=='WaterLevelPressure'
+                                l.properties[0].name === 'WaterLevelPressure'
                             )).map((l, index) => (
                                 <CircleMarker
                                     radius={5}
@@ -143,7 +143,7 @@ class ThingsMap extends Component{
                     <Overlay checked name="WaterChemistry">
                         <LayerGroup>
                             {this.state.nmbg_data ? this.state.nmbg_data.features.filter(l=>(
-                                l.properties[0].name=='WaterChemistryAnalysis'
+                                l.properties[0].name === 'WaterChemistryAnalysis'
                             )).map((l, index) => (
                                 <CircleMarker
                                     radius={5}

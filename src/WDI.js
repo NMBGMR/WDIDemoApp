@@ -25,7 +25,8 @@ class WDI extends Component {
             location: '',
             startDate: new Date(),
             endDate: new Date(),
-            selected_link: null
+            selected_link: null,
+            obs_limit: ''
         }
     }
 
@@ -48,7 +49,7 @@ class WDI extends Component {
             if (selection.isSelected){
                 const ep = (this.state.location +'-'+this.state.thing+'-'+selection.row.name).replace(/\s/g, '_')
                 retrieveItems(selection.row.link+'/Observations?$orderBy=phenomenonTime',
-                    2, // this should be an editable attribute
+                    this.state.obs_limit, // this should be an editable attribute
                     (result)=>{
                     const dates = result.map(v=>(new Date(v['phenomenonTime'])))
                     this.setState({observations: result,
@@ -61,30 +62,39 @@ class WDI extends Component {
         } else { this.setState({observations: null, datastream: null, observationsExportPath:null}) }
     }
 
-    loadObservations(start, end){
+    loadObservations(start, end, limit){
         if (this.state.selected_link){
             start = start? start: this.state.startDate
             end = end? end: this.state.endDate
+            limit = limit? limit: this.state.nobs_limit
 
             const url =this.state.selected_link+'/Observations?$orderBy=phenomenonTime'+
                 '&$filter=phenomenonTime gt '+start.toISOString() +
                 ' and phenomenonTime lt '+end.toISOString()
             console.log(url)
             retrieveItems(url,
-                100,
+                limit,
                 (result)=>{this.setState({observations: result})})
         }
     }
 
     handleStartPost(date) {
         this.setState({'startDate': date})
-        this.loadObservations(date, null)
+        this.loadObservations(date, null, null)
 
     }
 
     handleEndPost(date) {
         this.setState({'endDate': date})
-        this.loadObservations(null, date)
+        this.loadObservations(null, date, null)
+    }
+
+    handleLimit(event) {
+        let l = event.target.value
+        let n = l? parseInt(l): -1
+
+        this.setState({nobs_limit: n, obs_limit: l});
+        this.loadObservations(null, null, n)
     }
 
     render() {
@@ -163,6 +173,17 @@ class WDI extends Component {
                                     selected={this.state.endDate}
                                     onChange={(date)=> this.handleEndPost(date)}
                                 />
+
+                            </div>
+                            <div className='divR'>
+                                <h4>Limit</h4>
+                                <form>
+                                    <label>
+                                        <input type="text"
+                                               value={this.state.obs_limit}
+                                               onChange={(event)=>this.handleLimit(event)} />
+                                    </label>
+                                </form>
                             </div>
                         </div>
                         <ObservationsTable

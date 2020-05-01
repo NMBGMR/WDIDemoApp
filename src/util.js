@@ -1,19 +1,27 @@
 import axios from "axios";
 
-const getItems = (url, maxCalls, i, items, resolve, reject) =>{
+const getItems = (url, maxitems, i, items, resolve, reject) =>{
     axios.get(url).then(response=>{
-        const ritems = items.concat(response.data.value)
-        if (response.data['@iot.nextLink']!=null && i<maxCalls){
-            getItems(response.data['@iot.nextLink'], maxCalls, i+1, ritems, resolve, reject)
+        let ritems = items.concat(response.data.value)
+        if (maxitems>0){
+            if (ritems.length>maxitems){
+                ritems = ritems.slice(0,maxitems)
+                resolve(ritems)
+                return
+            }
+        }
+
+        if (response.data['@iot.nextLink']!=null){
+            getItems(response.data['@iot.nextLink'], maxitems, i+1, ritems, resolve, reject)
         }else{
             resolve(ritems)
         }
     })
 }
 
-const retrieveItems = (url, maxcalls, callback) => {
+const retrieveItems = (url, maxitems, callback) => {
     new Promise((resolve, reject) => {
-        getItems(url, maxcalls, 0, [], resolve, reject)}).then(callback)
+        getItems(url, maxitems, 0, [], resolve, reject)}).then(callback)
 }
 
 export default retrieveItems
