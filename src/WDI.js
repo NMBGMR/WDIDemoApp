@@ -26,7 +26,9 @@ class WDI extends Component {
             startDate: new Date(),
             endDate: new Date(),
             selected_link: null,
-            obs_limit: ''
+            obs_limit: '',
+            nobs_limit: 0,
+            obs_order: 'asc'
         }
     }
 
@@ -62,13 +64,13 @@ class WDI extends Component {
         } else { this.setState({observations: null, datastream: null, observationsExportPath:null}) }
     }
 
-    loadObservations(start, end, limit){
+    loadObservations(start, end, limit, order){
         if (this.state.selected_link){
             start = start? start: this.state.startDate
             end = end? end: this.state.endDate
             limit = limit? limit: this.state.nobs_limit
-
-            const url =this.state.selected_link+'/Observations?$orderBy=phenomenonTime'+
+            order = order? order: this.state.obs_order
+            const url =this.state.selected_link+'/Observations?$orderBy=phenomenonTime '+ order +
                 '&$filter=phenomenonTime gt '+start.toISOString() +
                 ' and phenomenonTime lt '+end.toISOString()
             console.log(url)
@@ -80,13 +82,13 @@ class WDI extends Component {
 
     handleStartPost(date) {
         this.setState({'startDate': date})
-        this.loadObservations(date, null, null)
+        this.loadObservations(date, null, null, null)
 
     }
 
     handleEndPost(date) {
         this.setState({'endDate': date})
-        this.loadObservations(null, date, null)
+        this.loadObservations(null, date, null, null)
     }
 
     handleLimit(event) {
@@ -94,7 +96,12 @@ class WDI extends Component {
         let n = l? parseInt(l): -1
 
         this.setState({nobs_limit: n, obs_limit: l});
-        this.loadObservations(null, null, n)
+        this.loadObservations(null, null, n, null)
+    }
+
+    handleOrder(event){
+        this.setState({obs_order: event.target.value})
+        this.loadObservations(null, null, null, event.target.value)
     }
 
     render() {
@@ -184,7 +191,14 @@ class WDI extends Component {
                                                onChange={(event)=>this.handleLimit(event)} />
                                     </label>
                                 </form>
+                                <form>
+                                    <select name="orderby" onChange={(event)=>this.handleOrder(event)}>
+                                        <option value="asc">Ascending</option>
+                                        <option value="desc">Descending</option>
+                                    </select>
+                                </form>
                             </div>
+
                         </div>
                         <ObservationsTable
                             observationsExportPath={this.state.observationsExportPath}
