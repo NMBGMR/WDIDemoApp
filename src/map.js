@@ -1,16 +1,27 @@
 
 import React, {Component} from 'react'
-import { Map, CircleMarker, TileLayer, LayersControl, LayerGroup} from "react-leaflet";
+import {Map, CircleMarker, TileLayer, LayersControl, LayerGroup, FeatureGroup} from "react-leaflet";
 import axios from 'axios';
 import 'leaflet/dist/leaflet.css'
-
+import 'leaflet-draw/dist/leaflet.draw.css'
 // import * as nmbg from './nmbg_locations.json'
 // import * as ngwmn from './usgs_ngwmn_locations.json'
 import * as nmbg from './local_locations.json'
+import {EditControl} from "react-leaflet-draw";
+import retrieveItems from "./util";
 const LOCAL = false
 
 const { BaseLayer, Overlay } = LayersControl
 
+function saveFile(txt, name){
+    const blob = new Blob([txt], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement("a")
+
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+}
 
 
 class ThingsMap extends Component{
@@ -29,12 +40,58 @@ class ThingsMap extends Component{
 
         }else{
             axios.get('https://storage.googleapis.com/download/storage/v1/b/waterdatainitiative/o/nmbg_locations.json?&alt=media',).then(success =>{
+
+
                 this.setState({nmbg_data: success.data})
             })
             axios.get('https://storage.googleapis.com/download/storage/v1/b/waterdatainitiative/o/usgs_ngwmn_locations.json?&alt=media',).then(success =>{
+                // let data = success.data
+                // let features = data.features.slice(0,1)
+                // data.features = features
                 this.setState({usgs_ngwmn_data: success.data})
             })
         }
+    }
+    handleCreate(e){
+        let sw = e.layer._bounds._southWest
+        let ne = e.layer._bounds._northEast
+        let locations = this.state.usgs_ngwmn_data.features.filter((d)=>{
+            const lat = d.geometry.coordinates[1]
+            const lon = d.geometry.coordinates[0]
+            if (sw.lng<=lon && lon<=ne.lng){
+                return sw.lat<=lat && lat<=ne.lat
+            }
+
+        })
+        e.layer.remove()
+        const atomic_output = true
+        if (atomic_output){
+            locations.forEach(this.exportLocation)
+        }
+    }
+
+    exportLocation(loc){
+        // going to assume first thing and first datastream
+        const thing_idx = 0
+        const ds_idx = 0
+
+        axios.get(loc.link+'?$expand=Things/Datastreams').then(success=>{
+            const thing = success.data.Things[thing_idx]
+            const ds = thing.Datastreams[ds_idx]
+            const url = ds['@iot.selfLink']+'/Observations?$orderBy=phenomenonTime'
+            const filename = loc.properties[0].name+'_'+thing.name+'_'+ds.name+'.csv'
+            retrieveItems(url, -1, items=>{
+                let csv = 'Time,Result\n';
+                items.forEach(function(row) {
+                    csv += row['phenomenonTime']
+                    csv +=','
+                    csv += row['result']
+                    csv += '\n'
+                });
+                saveFile(csv, filename)
+
+            })
+        })
     }
 
     render() {
@@ -50,7 +107,19 @@ class ThingsMap extends Component{
                     attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
+                <FeatureGroup>
+                    <EditControl positon="topleft"
+                                 onCreated={(event)=> this.handleCreate(event)}
+                                 draw={{
+                                     polyline: false,
+                                     marker: false,
+                                     circle: false,
+                                     circlemarker: false,
+                                 }}
+                                 edit = {{edit: false, remove: false}}
 
+                    />
+                </FeatureGroup>
                 <LayersControl position="topright">
                     <BaseLayer name='OpenStreetMap'>
                         <TileLayer
