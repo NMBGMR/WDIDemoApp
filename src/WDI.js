@@ -50,7 +50,7 @@ class WDI extends Component {
         if(selection){
             if (selection.isSelected){
                 const ep = (this.state.location +'-'+this.state.thing+'-'+selection.row.name).replace(/\s/g, '_')
-                retrieveItems(selection.row.link+'/Observations?$orderBy=phenomenonTime',
+                retrieveItems(selection.row.link+'/Observations?$orderby=phenomenonTime '+this.state.obs_order,
                     this.state.obs_limit, // this should be an editable attribute
                     (result)=>{
                     const dates = result.map(v=>(new Date(v['phenomenonTime'])))
