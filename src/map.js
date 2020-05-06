@@ -56,14 +56,21 @@ class ThingsMap extends Component{
     handleCreate(e){
         let sw = e.layer._bounds._southWest
         let ne = e.layer._bounds._northEast
-        let locations = this.state.usgs_ngwmn_data.features.filter((d)=>{
-            const lat = d.geometry.coordinates[1]
-            const lon = d.geometry.coordinates[0]
-            if (sw.lng<=lon && lon<=ne.lng){
-                return sw.lat<=lat && lat<=ne.lat
-            }
 
-        })
+        function getLocations(data, source){
+            return data.features.filter((d)=>{
+                const lat = d.geometry.coordinates[1]
+                const lon = d.geometry.coordinates[0]
+                if (sw.lng<=lon && lon<=ne.lng){
+                    return sw.lat<=lat && lat<=ne.lat
+                }
+            }).map(loc=>{loc['source']=source
+            return loc})
+        }
+
+        let locations = getLocations(this.state.usgs_ngwmn_data, 'USGS NGWMN')
+        locations = locations.concat(getLocations(this.state.nmbg_data, 'NMBGMR'))
+
         e.layer.remove()
 
         this.setState({'show_save_modal': true, locations: locations})
@@ -75,34 +82,10 @@ class ThingsMap extends Component{
         if (this.state.use_atomic){
             this.state.locations.forEach(this.exportLocation)
         }else{
-            const n = this.state.locations.length-1
-            // create a single csv file
-            let csv = 'well, lat, lon, time, result\n';
-            this.state.locations.forEach((row, idx)=>{
-                // get the last observation
-                const thing_idx = 0
-                const ds_idx = 0
-                axios.get(row.link+'?$expand=Things/Datastreams').then(success=>{
-                    const thing = success.data.Things[thing_idx]
-                    const ds = thing.Datastreams[ds_idx]
-                    const url = ds['@iot.selfLink']+'/Observations?$orderBy=phenomenonTime DESC &$top=1'
-
-                    axios.get(url).then(success=>{
-                        let obs = success.data.value[0]
-                        csv += row.properties[0].name+','
-                        csv +=row.geometry.coordinates[1]+','+row.geometry.coordinates[0]+','
-                        csv +=obs['phenomenonTime']+','+obs['result']+'\n'
-
-                        if (idx==n){
-                            saveFile(csv, 'output.csv')
-                        }
-                    })
-                })
-
-            })
-
-
+            this.exportAtomic()
         }
+
+        this.setState({locations: null})
     }
 
     handleCancel = e=>{
@@ -112,10 +95,52 @@ class ThingsMap extends Component{
     }
 
     handleAtomic = e=>{
-        console.log('asfdafasdfasdfasdfsa')
         this.setState({'use_atomic': !this.state.use_atomic})
     }
 
+    exportAtomic(){
+        console.debug('n selected', this.state.locations.length)
+        const n = this.state.locations.length-1
+        // // create a single csv file
+        function getAtomicObservations(locations, idx, doc, resolve, reject){
+            let loc = locations[idx]
+            axios.get(loc.link+'?$expand=Things/Datastreams').then(success=>{
+                    const thing = success.data.Things[0]
+                    const name = success.data.name
+                    const ds = thing.Datastreams.filter(d=> (
+                        d['name'] === 'Depth Below Surface'))[0]
+
+                    axios.get(ds['@iot.selfLink']+
+                                    '/Observations?$orderBy=phenomenonTime DESC &$top=1').then(success=>{
+                        let obs = success.data.value[0]
+                        let row = [name,
+                            loc.properties[0].name,
+                            loc.geometry.coordinates[1],
+                            loc.geometry.coordinates[0],
+                            obs['phenomenonTime'],
+                            obs['result'].toFixed(2),
+                            loc.source]
+
+                        row = row.reduce((acc, cur)=>(acc+','+cur))
+                        doc+=row+'\n'
+
+                        if (idx<n){
+                            getAtomicObservations(locations,idx+1, doc, resolve, reject)
+                        }else{
+                            resolve(doc)
+                        }
+                    })
+                })
+        }
+        new Promise((resolve, reject)=>{
+            getAtomicObservations(this.state.locations, 0,
+                'location, thing, lat, lon, time, result, source\n',
+                resolve, reject)
+        }).then(result=>{
+            saveFile(result, 'output.csv')
+        })
+
+    }
     exportLocation(loc){
         // going to assume first thing
         const thing_idx = 0
@@ -132,10 +157,8 @@ class ThingsMap extends Component{
             retrieveItems(url, -1, items=>{
                 let csv = 'Time,Result\n';
                 items.forEach(function(row) {
-                    csv += row['phenomenonTime']
-                    csv +=','
-                    csv += row['result']
-                    csv += '\n'
+                    csv += row['phenomenonTime']+','
+                    csv += row['result']+'\n'
                 });
                 saveFile(csv, filename)
 
@@ -167,6 +190,7 @@ class ThingsMap extends Component{
                                          marker: false,
                                          circle: false,
                                          circlemarker: false,
+                                         polygon: false
                                      }}
                                      edit = {{edit: false, remove: false}}
 
@@ -254,6 +278,7 @@ class ThingsMap extends Component{
                                         radius={5}
                                         key={index}
                                         color={'green'}
+
                                         onClick={this.props.onSelect}
                                         center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
                                         properties={l}/>
