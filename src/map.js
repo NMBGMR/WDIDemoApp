@@ -10,11 +10,15 @@ import * as nmbg from './local_locations.json'
 import {EditControl} from "react-leaflet-draw";
 import retrieveItems from "./util";
 import MapSaveDialog from "./map_save_dialog";
+import MapFilter from "./mapfilter"
 
 const LOCAL = false
 
 
 const { BaseLayer, Overlay } = LayersControl
+
+const usgs_ngwm_base = 'https://frost-nm.internetofwater.dev/api/v1.0/'
+const nmbg_base = 'http://104.196.225.45/v1.0/'
 
 function saveFile(txt, name){
     const blob = new Blob([txt], { type: 'text/csv;charset=utf-8;' });
@@ -26,39 +30,64 @@ function saveFile(txt, name){
     a.click();
 }
 
+function toCSV(items){
+    return items.reduce((acc, cur)=>(acc+','+cur))+'\n'
+}
 
 class ThingsMap extends Component{
     state = {
         hasLocation: false,
         latlng: null,
-        nmbg_data: null,
+        nmbg_wl_data: null,
+        nmbg_wq_data: null,
+        cabq_data: null,
         usgs_ngwmn_data: null,
         show_save_modal: false,
-        use_atomic: false
+        use_atomic: false,
+        filter_str: '2000-01-01',
+        filter_comp: 'lt',
+        filter_attr: 'observations'
     }
 
     componentDidMount() {
             // is local
         if (LOCAL){
-            this.setState({nmbg_data: nmbg.default})
+            this.setState({nmbg_wl_data: nmbg.default.features.filter(l=>(l.properties[0].name === 'WaterLevelPressure')),
+                                nmbg_wq_data: nmbg.default.features.filter(l=>(l.properties[0].name === 'WaterChemistryAnalysis'))})
         }else{
             axios.get('https://storage.googleapis.com/download/storage/v1/b/waterdatainitiative/o/nmbg_locations.json?&alt=media',).then(success =>{
-                this.setState({nmbg_data: success.data})
+                let features = success.data.features
+                function f(tag){
+                    return (l)=> (l.properties[0].name === tag)
+                }
+
+                let nmbg_wl = features.filter(f('WaterLevelPressure'))
+                let cabq_data = features.filter(f('WaterLevels'))
+                let nmbg_wq = features.filter(f('WaterChemistryAnalysis'))
+
+                this.setState({nmbg_wl_data: nmbg_wl,
+                                    onmbg_wl_data: nmbg_wl,
+                                    cabq_data: cabq_data,
+                                    ocabq_data: cabq_data,
+                                    nmbg_wq_data: nmbg_wq})
             })
             axios.get('https://storage.googleapis.com/download/storage/v1/b/waterdatainitiative/o/usgs_ngwmn_locations.json?&alt=media',).then(success =>{
                 // let data = success.data
                 // let features = data.features.slice(0,1)
                 // data.features = features
-                this.setState({usgs_ngwmn_data: success.data})
+                this.setState({usgs_ngwmn_data: success.data.features,
+                                    ousgs_ngwmn_data: success.data.features})
             })
         }
     }
+
+    // rect selection
     handleCreate(e){
         let sw = e.layer._bounds._southWest
         let ne = e.layer._bounds._northEast
 
         function getLocations(data, source){
-            return data.features.filter((d)=>{
+            return data.filter((d)=>{
                 const lat = d.geometry.coordinates[1]
                 const lon = d.geometry.coordinates[0]
                 if (sw.lng<=lon && lon<=ne.lng){
@@ -69,13 +98,15 @@ class ThingsMap extends Component{
         }
 
         let locations = getLocations(this.state.usgs_ngwmn_data, 'USGS NGWMN')
-        locations = locations.concat(getLocations(this.state.nmbg_data, 'NMBGMR'))
+        locations = locations.concat(getLocations(this.state.nmbg_wl_data, 'NMBGMR'))
+        locations = locations.concat(getLocations(this.state.cabq_data, 'CABQ'))
 
         e.layer.remove()
 
         this.setState({'show_save_modal': true, locations: locations})
 
     }
+
     handleSave = e=>{
         this.setState({'show_save_modal': false})
 
@@ -111,18 +142,15 @@ class ThingsMap extends Component{
                         d['name'] === 'Depth Below Surface'))[0]
 
                     axios.get(ds['@iot.selfLink']+
-                                    '/Observations?$orderBy=phenomenonTime DESC &$top=1').then(success=>{
+                                    '/Observations?$orderby=phenomenonTime DESC &$top=1').then(success=>{
                         let obs = success.data.value[0]
-                        let row = [name,
+                        doc += toCSV([name,
                             loc.properties[0].name,
                             loc.geometry.coordinates[1],
                             loc.geometry.coordinates[0],
                             obs['phenomenonTime'],
                             obs['result'].toFixed(2),
-                            loc.source]
-
-                        row = row.reduce((acc, cur)=>(acc+','+cur))
-                        doc+=row+'\n'
+                            loc.source])
 
                         if (idx<n){
                             getAtomicObservations(locations,idx+1, doc, resolve, reject)
@@ -157,13 +185,56 @@ class ThingsMap extends Component{
             retrieveItems(url, -1, items=>{
                 let csv = 'Time,Result\n';
                 items.forEach(function(row) {
-                    csv += row['phenomenonTime']+','
-                    csv += row['result']+'\n'
+                    csv+=toCSV([row['phenomenonTime'],
+                        row['result'].toFixed(2)])
                 });
                 saveFile(csv, filename)
 
             })
         })
+    }
+
+
+    // filtering
+    handleClear = e=>{
+        this.setState({usgs_ngwmn_data: this.state.ousgs_ngwmn_data})
+    }
+
+    handleFilter = e=>{
+        console.debug('handle filter')
+        console.debug(this.state.filter_attr)
+        console.debug(this.state.filter_comp)
+        console.debug(this.state.filter_str)
+
+        let url = usgs_ngwm_base+'Locations?$filter='
+        let d = new Date(this.state.filter_str)
+
+        if (this.state.filter_attr=='observations'){
+            url +='Things/Datastreams/Observations/phenomenonTime '
+            url +=this.state.filter_comp
+            url +=' '+ d.toISOString()
+        }
+
+        let data = this.state.ousgs_ngwmn_data
+
+        axios.get(url).then(success=>{
+            let nlocations = data.filter(d=>{
+                    for (let l of success.data.value){
+                        if (d.link==l['@iot.selfLink']){
+                            return true
+                        }}})
+            this.setState({usgs_ngwmn_data: nlocations})
+        })
+
+    }
+    handleStr = e=>{
+        this.setState({filter_str: e.target.value})
+    }
+    handleAttr = e=>{
+        this.setState({filter_attr: e.target.value})
+    }
+    handleComp = e=>{
+        this.setState({filter_comp:e.target.value})
     }
 
     render() {
@@ -173,6 +244,15 @@ class ThingsMap extends Component{
                             handleSave={this.handleSave}
                             handleCancel={this.handleCancel}
                             handleAtomic={this.handleAtomic}/>
+                <MapFilter
+                    filter_comp={this.state.filter_comp}
+                    filter_attr={this.state.filter_attr}
+                    handleAttr={this.handleAttr}
+                    handleStr={this.handleStr}
+                    handleComp={this.handleComp}
+                    handleFilter={this.handleFilter}
+                    handleClear={this.handleClear}/>
+
                 <Map center={this.props.center}
                      zoom={this.props.zoom}
                      minZoom={4}
@@ -242,10 +322,10 @@ class ThingsMap extends Component{
                         </BaseLayer>
                         <Overlay checked name='USGS NGWMN'>
                             <LayerGroup>
-                                {this.state.usgs_ngwmn_data ? this.state.usgs_ngwmn_data.features.map((l, index)=>(
+                                {this.state.usgs_ngwmn_data ? this.state.usgs_ngwmn_data.map(l=>(
                                     <CircleMarker
                                         radius={5}
-                                        key={index}
+                                        key={l.link}
                                         color={'blue'}
                                         onClick={this.props.onSelect}
                                         center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
@@ -255,12 +335,10 @@ class ThingsMap extends Component{
                         </Overlay>
                         <Overlay checked name="WaterLevelCABQ">
                             <LayerGroup>
-                                {this.state.nmbg_data ? this.state.nmbg_data.features.filter(l=>(
-                                    l.properties[0].name === 'WaterLevels'
-                                )).map((l, index) => (
+                                {this.state.cabq_data ? this.state.cabq_data.map(l => (
                                     <CircleMarker
                                         radius={5}
-                                        key={index}
+                                        key={l.link}
                                         color={'#fce066'}
                                         onClick={this.props.onSelect}
                                         center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
@@ -271,14 +349,11 @@ class ThingsMap extends Component{
                         </Overlay>
                         <Overlay checked name="WaterLevelPressure">
                             <LayerGroup>
-                                {this.state.nmbg_data ? this.state.nmbg_data.features.filter(l=>(
-                                    l.properties[0].name === 'WaterLevelPressure'
-                                )).map((l, index) => (
+                                {this.state.nmbg_wl_data ? this.state.nmbg_wl_data.map(l => (
                                     <CircleMarker
                                         radius={5}
-                                        key={index}
+                                        key={l.link}
                                         color={'green'}
-
                                         onClick={this.props.onSelect}
                                         center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
                                         properties={l}/>
@@ -288,9 +363,7 @@ class ThingsMap extends Component{
                         </Overlay>
                         <Overlay checked name="WaterChemistry">
                             <LayerGroup>
-                                {this.state.nmbg_data ? this.state.nmbg_data.features.filter(l=>(
-                                    l.properties[0].name === 'WaterChemistryAnalysis'
-                                )).map((l, index) => (
+                                {this.state.nmbg_wq_data ? this.state.nmbg_wq_data.map((l, index) => (
                                     <CircleMarker
                                         radius={5}
                                         key={index}
