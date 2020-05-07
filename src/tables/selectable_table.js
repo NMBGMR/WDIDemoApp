@@ -17,17 +17,8 @@ function SelectableTable(props){
     const [selected, setSelected] = React.useState([]);
 
     const labels = props.columns.map((c, i)=>{
-        return (<TableCell className={classes.sizeSmall} key={i}>{c.label}</TableCell>)
-    })
+        return (<TableCell className={classes.sizeSmall} key={i}>{c.label}</TableCell>)})
 
-    function Rows(props){
-        let rows = [];
-        for (let i=0; i<props.columns.length; i++){
-            rows.push(<TableCell className={classes.sizeSmall}
-                                 key={i+1}>{props.row[props.columns[i].key]}</TableCell>)
-        }
-        return rows;
-    }
     const handleClick = (event, row) => {
         const selectedIndex = selected.indexOf(row.id);
         let newSelected = [];
@@ -59,8 +50,6 @@ function SelectableTable(props){
 
     const data = props.items ? props.items : []
 
-
-
     return (
         <TableContainer component={Paper}>
             <Table size='small' aria-label="a dense table">
@@ -73,18 +62,25 @@ function SelectableTable(props){
                 <TableBody>
                     {data.map((r, index) => {
                         const isItemSelected = isSelected(r.id);
+
                         return (
                             <TableRow key={r.id}
-                                      hover
+                                      className={classes.row}
+                                      // hover
                                       onClick = {(event) => handleClick(event, r)}
                                       role='checkbox'
                                       selected={isItemSelected}>
+
                                 <TableCell padding="checkbox">
                                     <Checkbox
-                                        // style={{padding: '0px'}}
+                                        color={'primary'}
+                                        // className={classes.paddingCheckbox}
                                         checked={isItemSelected}/>
                                 </TableCell>
-                                <Rows row={r} columns={props.columns}/>
+
+                                {props.columns.map(c=><TableCell className={classes.sizeSmall}
+                                                    key={c.key}>{r[c.key]}</TableCell>)}
+
                             </TableRow>
                         )})
                     }

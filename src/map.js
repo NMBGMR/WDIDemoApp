@@ -39,13 +39,14 @@ class ThingsMap extends Component{
         hasLocation: false,
         latlng: null,
         nmbg_wl_data: null,
+        onmbg_wl_data: null,
         nmbg_wq_data: null,
         cabq_data: null,
         usgs_ngwmn_data: null,
         show_save_modal: false,
         use_atomic: false,
-        filter_str: '2000-01-01',
-        filter_comp: 'lt',
+        filter_str: '10/20/2019',
+        filter_comp: 'gt',
         filter_attr: 'observations'
     }
 
@@ -197,7 +198,8 @@ class ThingsMap extends Component{
 
     // filtering
     handleClear = e=>{
-        this.setState({usgs_ngwmn_data: this.state.ousgs_ngwmn_data})
+        this.setState({usgs_ngwmn_data: this.state.ousgs_ngwmn_data,
+                            nmbg_wl_data: this.state.onmbg_wl_data})
     }
 
     handleFilter = e=>{
@@ -206,27 +208,47 @@ class ThingsMap extends Component{
         console.debug(this.state.filter_comp)
         console.debug(this.state.filter_str)
 
-        let url = usgs_ngwm_base+'Locations?$filter='
-        let d = new Date(this.state.filter_str)
+        function datafilter(base, attr, comp, str, cb){
+            let url = base
 
-        if (this.state.filter_attr=='observations'){
-            url +='Things/Datastreams/Observations/phenomenonTime '
-            url +=this.state.filter_comp
-            url +=' '+ d.toISOString()
+            switch (attr){
+                case 'observations':
+                    let d = new Date(str)
+
+                    url =base+"Locations?$filter=Things/Datastreams/name eq 'Depth Below Surface'" +
+                    " and Things/Datastreams/Observations/phenomenonTime "
+                    url +=comp
+                    url +=' '+d.toISOString()
+                    break
+            }
+            console.debug(url)
+            retrieveItems(url, -1, items=>{
+                console.debug('matches', items.length)
+                    function f(d){
+                        for (let l of items){
+                            // console.log(d.link, l['@iot.selfLink'])
+                            if (d.link==l['@iot.selfLink']){
+                                return true
+                            }}
+                    }
+                    cb(f)
+            })
         }
 
-        let data = this.state.ousgs_ngwmn_data
-
-        axios.get(url).then(success=>{
-            let nlocations = data.filter(d=>{
-                    for (let l of success.data.value){
-                        if (d.link==l['@iot.selfLink']){
-                            return true
-                        }}})
-            this.setState({usgs_ngwmn_data: nlocations})
-        })
+        datafilter(usgs_ngwm_base,
+            this.state.filter_attr,
+            this.state.filter_comp,
+            this.state.filter_str,
+                f=>(this.setState({usgs_ngwmn_data: this.state.ousgs_ngwmn_data.filter(f)})))
+        datafilter(nmbg_base,
+            this.state.filter_attr,
+            this.state.filter_comp,
+            this.state.filter_str,
+            f=>(this.setState({nmbg_wl_data: this.state.onmbg_wl_data.filter(f)})))
 
     }
+
+
     handleStr = e=>{
         this.setState({filter_str: e.target.value})
     }
@@ -239,7 +261,7 @@ class ThingsMap extends Component{
 
     render() {
         return (
-            <div>
+            <div className={'group'}>
                 <MapSaveDialog open={this.state.show_save_modal}
                             handleSave={this.handleSave}
                             handleCancel={this.handleCancel}
@@ -252,6 +274,7 @@ class ThingsMap extends Component{
                     handleComp={this.handleComp}
                     handleFilter={this.handleFilter}
                     handleClear={this.handleClear}/>
+                <div className={'subgroup'}>
 
                 <Map center={this.props.center}
                      zoom={this.props.zoom}
@@ -378,8 +401,8 @@ class ThingsMap extends Component{
                             </LayerGroup>
                         </Overlay>
                     </LayersControl>
-
                 </Map>
+                </div>
             </div>
 
 

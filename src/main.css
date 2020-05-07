@@ -25,3 +25,18 @@
     background: #ffffff;
     height: 300px;
 }
+
+.group {
+    background: #2e907c;
+    padding: 10px;
+    border: #282c34;
+    border-style: solid;
+    border-radius: 4px;
+}
+.subgroup {
+    background: #4ebba5;
+    padding: 10px;
+    border: #282c34;
+    border-style: solid;
+    border-radius: 4px;
+}

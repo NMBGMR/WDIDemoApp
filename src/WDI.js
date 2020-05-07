@@ -112,7 +112,6 @@ class WDI extends Component {
                 </div>
                 <div className="hcontainer" style={{ marginTop: 50}}>
                     <div className="divL">
-                        <h3>MAP</h3>
                         <ThingsMap
                             center={[34.359593, -106.906871]}
                             zoom={6}
@@ -140,31 +139,37 @@ class WDI extends Component {
 
                             }}
                         />
-                        <h3>Chart</h3>
-                        <div className='chart'>
-                            <DatastreamChart
-                                datastream = {this.state.datastream}
-                                observations={this.state.observations}/>
+                        <div className={'group'}>
+                            <div className='chart'>
+                                <DatastreamChart
+                                    datastream = {this.state.datastream}
+                                    observations={this.state.observations}/>
+                            </div>
                         </div>
+
 
                     </div>
 
                     <div className="divR">
-                        <h3>Locations</h3>
-                        <LocationsTable
-                            locations={this.state.locations}
-                            selectable={false} />
-
+                        <div className={'group'}>
+                            <h3>Locations</h3>
+                            <LocationsTable
+                                locations={this.state.locations}
+                                selectable={false} />
+                        </div>
+                        <div className={'group'}>
                         <h3>Things</h3>
                         <ThingsTable
                             things={this.state.things}
                             onSelect={(selection)=>this.handleSelect(selection)} />
-
+                        </div>
+                            <div className={'group'}>
                         <h3>Datastreams</h3>
                             <DatastreamsTable
                             onSelect = {(selection)=> this.handleDSSelect(selection)}
                             datastreams={this.state.datastreams}/>
-
+                            </div>
+                        <div className={'group'}>
                         <h3>Observations</h3>
                         <div className='hcontainer'>
                             <div className='divL'>
@@ -203,6 +208,7 @@ class WDI extends Component {
                         <ObservationsTable
                             observationsExportPath={this.state.observationsExportPath}
                             items={this.state.observations}/>
+                        </div>
                     </div>
 
                 </div>

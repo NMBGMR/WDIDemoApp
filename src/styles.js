@@ -8,7 +8,11 @@ const useStyles = makeStyles({
         padding: '2px !important'
     },
     paddingCheckbox:{
-        padding: '0px !important'
+        // padding: '0px !important',
+        // background: 'purple'
+    },
+    row: {
+        background: "grey"
     }
 
 });

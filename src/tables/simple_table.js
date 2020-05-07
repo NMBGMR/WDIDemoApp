@@ -38,7 +38,7 @@ function SimpleTable(props){
                     {data.map((r, index) => {
                         return (
                             <TableRow
-                                
+                                className={classes.row}
                                 key={r.id}
                                       hover>
                                 <Rows row={r} columns={props.columns}/>

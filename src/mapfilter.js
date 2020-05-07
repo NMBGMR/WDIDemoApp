@@ -1,8 +1,4 @@
 import React, {Component} from 'react'
-import TextField from "@material-ui/core/TextField";
-import Button from "@material-ui/core/Button"
-import Select from "@material-ui/core/Select";
-import MenuItem from "@material-ui/core/MenuItem";
 
 class MapFilter extends Component{
     constructor(props) {
@@ -10,27 +6,30 @@ class MapFilter extends Component{
     }
 
     render() {
-        return <div>
-            <Select
+        return <div className={'subgroup'}>
+            <select
                 value={this.props.filter_attr}
                 onChange={this.props.handleAttr}>
-                <MenuItem value={'observations'}>Observations</MenuItem>
-                <MenuItem value={'nobservations'}>NumberObservations</MenuItem>
-            </Select>
-            <Select value={this.props.filter_comp}
+                <option value={'observations'}>Observations</option>
+                {/*<option value={'nobservations'}>NumberObservations</option>*/}
+            </select>
+            <select value={this.props.filter_comp}
                     onChange={this.props.handleComp}>
-                <MenuItem value={'lt'}>&lt;</MenuItem>
-                <MenuItem value={'gt'}>&gt;</MenuItem>
-                <MenuItem value={'le'}>&le;</MenuItem>
-                <MenuItem value={'ge'}>&ge;</MenuItem>
-                <MenuItem value={'eq'}>==</MenuItem>
-                <MenuItem value={'ne'}>!=</MenuItem>
-            </Select>
+                <option value={'lt'}>&lt;</option>
+                <option value={'gt'}>&gt;</option>
+                <option value={'le'}>&le;</option>
+                <option value={'ge'}>&ge;</option>
+                <option value={'eq'}>==</option>
+                <option value={'ne'}>!=</option>
+            </select>
 
-            <TextField id="standard-basic"
+            <input id="standard-basic"
             onChange={this.props.handleStr}/>
-            <Button onClick={this.props.handleFilter}>Filter</Button>
-            <Button onClick={this.props.handleClear}>Clear</Button>
+
+                <button onClick={this.props.handleFilter}>Filter</button>
+                <button onClick={this.props.handleClear}>Clear</button>
+
+
         </div>
     }
 }
