@@ -70,7 +70,7 @@ class WDI extends Component {
             end = end? end: this.state.endDate
             limit = limit? limit: this.state.nobs_limit
             order = order? order: this.state.obs_order
-            const url =this.state.selected_link+'/Observations?$orderBy=phenomenonTime '+ order +
+            const url =this.state.selected_link+'/Observations?$orderby=phenomenonTime '+ order +
                 '&$filter=phenomenonTime gt '+start.toISOString() +
                 ' and phenomenonTime lt '+end.toISOString()
             console.log(url)

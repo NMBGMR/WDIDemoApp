@@ -1,9 +1,14 @@
 const axios =require('axios');
-let base = 'https://frost-nm.internetofwater.dev/api/v1.0/Locations?$filter='
-base = 'http://104.196.225.45/v1.0/Locations?$filter='
+let base = 'https://frost-nm.internetofwater.dev/api/v1.0/'
+base = 'http://104.196.225.45/v1.0/'
 
-let d = new Date('2017-01-01')
-let url =base+ "Things/Datastreams/Observations/phenomenonTime lt "+d.toISOString()
+let d = new Date('2018-10-20')
+let url =base+ "Locations?$filter=Things/Datastreams/Observations/phenomenonTime gt "+d.toISOString()
+// url+= ', '
+// let url = base +"Locations?$filter=Things/Datastreams/name eq 'Depth Below Surface'" +
+//     " and Things/Datastreams/Observations/phenomenonTime gt "+d.toISOString()
+
+
 console.log(url)
 
 

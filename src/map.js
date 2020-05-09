@@ -214,7 +214,6 @@ class ThingsMap extends Component{
             switch (attr){
                 case 'observations':
                     let d = new Date(str)
-
                     url =base+"Locations?$filter=Things/Datastreams/name eq 'Depth Below Surface'" +
                     " and Things/Datastreams/Observations/phenomenonTime "
                     url +=comp
@@ -240,11 +239,11 @@ class ThingsMap extends Component{
             this.state.filter_comp,
             this.state.filter_str,
                 f=>(this.setState({usgs_ngwmn_data: this.state.ousgs_ngwmn_data.filter(f)})))
-        datafilter(nmbg_base,
-            this.state.filter_attr,
-            this.state.filter_comp,
-            this.state.filter_str,
-            f=>(this.setState({nmbg_wl_data: this.state.onmbg_wl_data.filter(f)})))
+        // datafilter(nmbg_base,
+        //     this.state.filter_attr,
+        //     this.state.filter_comp,
+        //     this.state.filter_str,
+        //     f=>(this.setState({nmbg_wl_data: this.state.onmbg_wl_data.filter(f)})))
 
     }
 
