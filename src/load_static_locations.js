@@ -1,9 +1,10 @@
 const fs = require('fs');
 const axios =require('axios');
-const base = 'http://104.196.225.45/v1.0'
-
+// const base = 'http://104.196.225.45/v1.0'
+// const base = 'http://34.106.252.186/FROST-Server/v1.1'
 // const base = 'http://localhost:8080/v1.0'
-const path = 'local_locations.json'
+const base = 'https://frost-nm.internetofwater.dev/api/v1.0'
+const path = 'usgs_ngwmn_locations.json'
 
 
 const getItems = (url, items, resolve, reject) =>{
@@ -25,7 +26,8 @@ new Promise((resolve, reject) => {
                                                           type: 'feature',
                                                           geometry: loc.location,
                                                           properties: loc.Things.map(t=> ({name: t['name']})),
-                                                          link: loc['@iot.selfLink']
+                                                          link: loc['@iot.selfLink'],
+                                                          name: loc.name
                                                       }
                                                       ))},
                     null , ' '))

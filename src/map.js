@@ -18,7 +18,8 @@ const LOCAL = false
 const { BaseLayer, Overlay } = LayersControl
 
 const usgs_ngwm_base = 'https://frost-nm.internetofwater.dev/api/v1.0/'
-const nmbg_base = 'http://104.196.225.45/v1.0/'
+// const nmbg_base = 'http://104.196.225.45/v1.0/'
+const  nmbg_base = 'http://34.106.252.186/FROST-Server/v1.1/'
 
 function saveFile(txt, name){
     const blob = new Blob([txt], { type: 'text/csv;charset=utf-8;' });
@@ -45,9 +46,10 @@ class ThingsMap extends Component{
         usgs_ngwmn_data: null,
         show_save_modal: false,
         use_atomic: false,
-        filter_str: '10/20/2019',
+        filter_str: '1950',
         filter_comp: 'gt',
-        filter_attr: 'observations'
+        filter_attr: 'observation_date',
+        center: [34.359593, -106.906871]
     }
 
     componentDidMount() {
@@ -56,15 +58,14 @@ class ThingsMap extends Component{
             this.setState({nmbg_wl_data: nmbg.default.features.filter(l=>(l.properties[0].name === 'WaterLevelPressure')),
                                 nmbg_wq_data: nmbg.default.features.filter(l=>(l.properties[0].name === 'WaterChemistryAnalysis'))})
         }else{
-            axios.get('https://storage.googleapis.com/download/storage/v1/b/waterdatainitiative/o/nmbg_locations.json?&alt=media',).then(success =>{
+            axios.get('https://storage.googleapis.com/download/storage/v1/b/waterdatainitiative/o/nmbg_st_locations.json?&alt=media',).then(success =>{
                 let features = success.data.features
                 function f(tag){
                     return (l)=> (l.properties[0].name === tag)
                 }
-
                 let nmbg_wl = features.filter(f('WaterLevelPressure'))
-                let cabq_data = features.filter(f('WaterLevels'))
-                let nmbg_wq = features.filter(f('WaterChemistryAnalysis'))
+                let cabq_data = features.filter(f('CABQWaterLevels'))
+                let nmbg_wq = features.filter(f('NMBGWaterChemistryAnalysis'))
 
                 this.setState({nmbg_wl_data: nmbg_wl,
                                     onmbg_wl_data: nmbg_wl,
@@ -208,42 +209,48 @@ class ThingsMap extends Component{
         console.debug(this.state.filter_comp)
         console.debug(this.state.filter_str)
 
-        function datafilter(base, attr, comp, str, cb){
-            let url = base
-
-            switch (attr){
-                case 'observations':
+        switch (this.state.filter_attr){
+            case 'observation_date':
+                function datafilter(base, comp, str, cb){
+                    let url = base
                     let d = new Date(str)
-                    url =base+"Locations?$filter=Things/Datastreams/name eq 'Depth Below Surface'" +
-                    " and Things/Datastreams/Observations/phenomenonTime "
+                    url =base+"Locations?$filter=Locations/Things/Datastreams/name eq 'Depth Below Surface'" +
+                        " and Things/Datastreams/Observations/phenomenonTime "
                     url +=comp
                     url +=' '+d.toISOString()
-                    break
-            }
-            console.debug(url)
-            retrieveItems(url, -1, items=>{
-                console.debug('matches', items.length)
-                    function f(d){
-                        for (let l of items){
-                            // console.log(d.link, l['@iot.selfLink'])
-                            if (d.link==l['@iot.selfLink']){
-                                return true
-                            }}
-                    }
-                    cb(f)
-            })
+                    console.debug(url)
+                    retrieveItems(url, -1, items=>{
+                        console.debug('matches', items.length)
+                        function f(d){
+                            for (let l of items){
+                                if (d.link==l['@iot.selfLink']){
+                                    return true
+                                }}
+                        }
+                        cb(f)
+                    })
+                }
+                datafilter(usgs_ngwm_base,
+                    this.state.filter_comp,
+                    this.state.filter_str,
+                    f=>(this.setState({usgs_ngwmn_data: this.state.ousgs_ngwmn_data.filter(f)})))
+                datafilter(nmbg_base,
+                    this.state.filter_comp,
+                    this.state.filter_str,
+                    f=>(this.setState({nmbg_wl_data: this.state.onmbg_wl_data.filter(f)})))
+                break
+            case 'location_name':
+                let fstr = this.state.filter_str
+                function f(fi){
+                    return fi['name'] == fstr
+                }
+
+                this.setState({usgs_ngwmn_data: this.state.ousgs_ngwmn_data.filter(f),
+                                    nmbg_wl_data: this.state.onmbg_wl_data.filter(f)
+                })
+                break
         }
 
-        datafilter(usgs_ngwm_base,
-            this.state.filter_attr,
-            this.state.filter_comp,
-            this.state.filter_str,
-                f=>(this.setState({usgs_ngwmn_data: this.state.ousgs_ngwmn_data.filter(f)})))
-        // datafilter(nmbg_base,
-        //     this.state.filter_attr,
-        //     this.state.filter_comp,
-        //     this.state.filter_str,
-        //     f=>(this.setState({nmbg_wl_data: this.state.onmbg_wl_data.filter(f)})))
 
     }
 
@@ -275,7 +282,7 @@ class ThingsMap extends Component{
                     handleClear={this.handleClear}/>
                 <div className={'subgroup'}>
 
-                <Map center={this.props.center}
+                <Map center={this.state.center}
                      zoom={this.props.zoom}
                      minZoom={4}
                      maxZoom={20}

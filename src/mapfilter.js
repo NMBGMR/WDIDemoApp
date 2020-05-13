@@ -10,7 +10,8 @@ class MapFilter extends Component{
             <select
                 value={this.props.filter_attr}
                 onChange={this.props.handleAttr}>
-                <option value={'observations'}>Observations</option>
+                <option value={'location_name'}>Location Name</option>
+                <option value={'observation_date'}>Observation Date</option>
                 {/*<option value={'nobservations'}>NumberObservations</option>*/}
             </select>
             <select value={this.props.filter_comp}

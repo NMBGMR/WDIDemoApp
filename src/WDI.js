@@ -107,13 +107,10 @@ class WDI extends Component {
     render() {
         return (
             <div>
-                <div>
-                    <h1 align='center'>New Mexico Water Data Demo App</h1>
-                </div>
                 <div className="hcontainer" style={{ marginTop: 50}}>
                     <div className="divL">
                         <ThingsMap
-                            center={[34.359593, -106.906871]}
+                            // center={[34.359593, -106.906871]}
                             zoom={6}
                             onSelect={e => {
                                 axios.get(e.target.options.properties.link).then(res => {
@@ -210,7 +207,11 @@ class WDI extends Component {
                             items={this.state.observations}/>
                         </div>
                     </div>
-
+                    {/*<div className='divR'>*/}
+                    {/*    <div className={'group'}>*/}
+                    {/*        <h3>CKAN</h3>*/}
+                    {/*    </div>*/}
+                    {/*</div>*/}
                 </div>
 
                 <div>
