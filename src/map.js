@@ -34,7 +34,12 @@ function saveFile(txt, name){
 function toCSV(items){
     return items.reduce((acc, cur)=>(acc+','+cur))+'\n'
 }
+function storageURL(name, gen){
+    const STORAGE_BASE ='https://storage.googleapis.com/download/storage/v1/b/'
+    const BUCKET = 'waterdatainitiative/'
+    return STORAGE_BASE+BUCKET+'o/'+name+'?'+'generation='+gen+'&alt=media'
 
+}
 class ThingsMap extends Component{
     state = {
         hasLocation: false,
@@ -58,22 +63,44 @@ class ThingsMap extends Component{
             this.setState({nmbg_wl_data: nmbg.default.features.filter(l=>(l.properties[0].name === 'WaterLevelPressure')),
                                 nmbg_wq_data: nmbg.default.features.filter(l=>(l.properties[0].name === 'WaterChemistryAnalysis'))})
         }else{
-            axios.get('https://storage.googleapis.com/download/storage/v1/b/waterdatainitiative/o/nmbg_st_locations.json?&alt=media',).then(success =>{
+            axios.get(storageURL('nmbg_locations.json',
+                '1592500801745747')).then(success =>{
+            // axios.get('https://storage.googleapis.com/download/storage/v1/b/waterdatainitiative/o/nmbg_st_locations.json?generation=1592239299382115&alt=media',).then(success =>{
+
                 let features = success.data.features
                 function f(tag){
-                    return (l)=> (l.properties[0].name === tag)
+                    return (l)=> (l.things[0].name === tag)
                 }
                 let nmbg_wl = features.filter(f('WaterLevelPressure'))
                 let cabq_data = features.filter(f('CABQWaterLevels'))
-                let nmbg_wq = features.filter(f('NMBGWaterChemistryAnalysis'))
+                let nmbg_wq = features.filter(f('WaterQuality'))
+                console.log(nmbg_wq)
+
+                function af(tag){
+                    return (l)=>(
+
+                        l.things.some((t)=>(t['datastreams'].some((d)=>(d['name'].startsWith(tag)))))
+                    )
+                }
 
                 this.setState({nmbg_wl_data: nmbg_wl,
                                     onmbg_wl_data: nmbg_wl,
                                     cabq_data: cabq_data,
                                     ocabq_data: cabq_data,
-                                    nmbg_wq_data: nmbg_wq})
+                                    nmbg_arsenic: nmbg_wq.filter(af('Arsenic')),
+                                    nmbg_hco3: nmbg_wq.filter(af('HCO3')),
+                                    nmbg_ca: nmbg_wq.filter(af('Ca')),
+                                    nmbg_tds: nmbg_wq.filter(af('TDS'))
+                                })
             })
-            axios.get('https://storage.googleapis.com/download/storage/v1/b/waterdatainitiative/o/usgs_ngwmn_locations.json?&alt=media',).then(success =>{
+
+            axios.get(storageURL('ose_locations_things_datastreams.json', '1594678670124235')).then(success=>{
+                this.setState({ose_pod_data: success.data.features,
+                                    oose_pod_data: success.data.features})
+            })
+
+            axios.get(storageURL('usgs_ngwmn_locations.json',
+                '1589236443170202')).then(success =>{
                 // let data = success.data
                 // let features = data.features.slice(0,1)
                 // data.features = features
@@ -244,7 +271,6 @@ class ThingsMap extends Component{
                 function f(fi){
                     return fi['name'] == fstr
                 }
-
                 this.setState({usgs_ngwmn_data: this.state.ousgs_ngwmn_data.filter(f),
                                     nmbg_wl_data: this.state.onmbg_wl_data.filter(f)
                 })
@@ -376,7 +402,7 @@ class ThingsMap extends Component{
                             </LayerGroup>
 
                         </Overlay>
-                        <Overlay checked name="WaterLevelPressure">
+                        <Overlay checked name="NMBG WaterLevelPressure">
                             <LayerGroup>
                                 {this.state.nmbg_wl_data ? this.state.nmbg_wl_data.map(l => (
                                     <CircleMarker
@@ -390,11 +416,11 @@ class ThingsMap extends Component{
                             </LayerGroup>
 
                         </Overlay>
-                        <Overlay checked name="WaterChemistry">
+                        <Overlay checked name="NMBG Arsenic">
                             <LayerGroup>
-                                {this.state.nmbg_wq_data ? this.state.nmbg_wq_data.map((l, index) => (
+                                {this.state.nmbg_arsenic ? this.state.nmbg_arsenic.map((l, index) => (
                                     <CircleMarker
-                                        radius={5}
+                                        radius={3}
                                         key={index}
                                         color={'red'}
                                         onClick={this.props.onSelect}
@@ -406,6 +432,72 @@ class ThingsMap extends Component{
                                 }
                             </LayerGroup>
                         </Overlay>
+                        <Overlay checked name="NMBG HCO3">
+                            <LayerGroup>
+                                {this.state.nmbg_hco3 ? this.state.nmbg_hco3.map((l, index) => (
+                                    <CircleMarker
+                                        radius={3}
+                                        key={index}
+                                        color={'purple'}
+                                        onClick={this.props.onSelect}
+                                        center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
+                                        properties={l}
+                                    >
+                                    </CircleMarker>
+                                )): null
+                                }
+                            </LayerGroup>
+                        </Overlay>
+                        <Overlay checked name="NMBG Ca">
+                            <LayerGroup>
+                                {this.state.nmbg_ca ? this.state.nmbg_ca.map((l, index) => (
+                                    <CircleMarker
+                                        radius={3}
+                                        key={index}
+                                        color={'orange'}
+                                        onClick={this.props.onSelect}
+                                        center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
+                                        properties={l}
+                                    >
+                                    </CircleMarker>
+                                )): null
+                                }
+                            </LayerGroup>
+                        </Overlay>
+                        <Overlay checked name="NMBG TDS">
+                            <LayerGroup>
+                                {this.state.nmbg_tds ? this.state.nmbg_tds.map((l, index) => (
+                                    <CircleMarker
+                                        radius={3}
+                                        key={index}
+                                        color={'lightblue'}
+                                        onClick={this.props.onSelect}
+                                        center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
+                                        properties={l}
+                                    >
+                                    </CircleMarker>
+                                )): null
+                                }
+                            </LayerGroup>
+                        </Overlay>
+
+                        <Overlay checked name="OSE POD">
+                            <LayerGroup>
+                                {this.state.ose_pod_data ? this.state.ose_pod_data.map((l, index) => (
+                                    <CircleMarker
+                                        radius={3}
+                                        key={index}
+                                        color={'violet'}
+                                        onClick={this.props.onSelect}
+                                        center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
+                                        properties={l}
+                                    >
+                                    </CircleMarker>
+                                )): null
+                                }
+                            </LayerGroup>
+                        </Overlay>
+
                     </LayersControl>
                 </Map>
                 </div>

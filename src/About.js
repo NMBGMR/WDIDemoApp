@@ -2,7 +2,7 @@
 import React, { Component } from 'react';
 class About extends Component{
     render() {
-        console.log('asdfasdsdf')
+        console.log('asdfasdsdfjjjjj')
         return (<div>
             <p>This is a simple demonstration app.  It is used to
             demonstrate displaying multiple SensorThings services.

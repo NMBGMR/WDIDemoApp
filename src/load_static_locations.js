@@ -1,10 +1,12 @@
 const fs = require('fs');
 const axios =require('axios');
 // const base = 'http://104.196.225.45/v1.0'
-// const base = 'http://34.106.252.186/FROST-Server/v1.1'
+// const base = 'https://st.newmexicowaterdata.org/FROST-Server/v1.1'
+const base = 'https://ose.newmexicowaterdata.org/FROST-Server/v1.1'
 // const base = 'http://localhost:8080/v1.0'
-const base = 'https://frost-nm.internetofwater.dev/api/v1.0'
-const path = 'usgs_ngwmn_locations.json'
+// const base = 'https://frost-nm.internetofwater.dev/api/v1.0'
+// const path = '../data/nmbg_locations_things_datastreams.json'
+const path = '../data/ose_locations_things_datastreams.json'
 
 
 const getItems = (url, items, resolve, reject) =>{
@@ -19,16 +21,35 @@ const getItems = (url, items, resolve, reject) =>{
 }
 
 new Promise((resolve, reject) => {
-    getItems(base+'/Locations?$expand=Things', [], resolve, reject)}).then(response=>{
+    // getItems(base+'/Locations?$expand=Things', [], resolve, reject)}).then(response=>{
+    getItems(base+'/Locations?$expand=Things/Datastreams', [], resolve, reject)}).then(response=>{
+        console.log(response)
+
     fs.writeFileSync(path,  JSON.stringify({type: 'FeatureCollection',
                                                   features: response.map( loc => (
                                                       {
                                                           type: 'feature',
                                                           geometry: loc.location,
-                                                          properties: loc.Things.map(t=> ({name: t['name']})),
+                                                          things: loc.Things.map(t=> (
+                                                              {
+                                                                  name: t['name'],
+                                                                  description: t['description'],
+                                                                  properties: t['properties'],
+                                                                  datastreams: t['Datastreams'].map(d=>(
+                                                                      {
+                                                                          name: d['name'],
+                                                                          description: d['description'],
+                                                                          link: d['@iot.selfLink']
+                                                                      }
+                                                                  ))
+                                                              })),
                                                           link: loc['@iot.selfLink'],
                                                           name: loc.name
                                                       }
                                                       ))},
                     null , ' '))
 })
+
+
+// use the following command to upload to g storage bucket
+

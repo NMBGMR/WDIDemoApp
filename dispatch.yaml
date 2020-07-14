@@ -1,0 +1,12 @@
+dispatch:
+  - url: "cv.newmexicowaterdata.org/*"
+    service: cv
+
+  - url: "demo.newmexicowaterdata.org/*"
+    service: default
+
+  - url: "mgt.newmexicowaterdata.org/*"
+    service: mgt
+
+  - url: "etl.newmexicowaterdata.org/*"
+    service: etl

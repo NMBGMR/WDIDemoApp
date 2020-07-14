@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import axios from "axios";
 
-import './main.css'
 import DatastreamsTable from './datastreams_table'
 import ThingsTable from './thing_table'
 import DatastreamChart from './datastream_chart'

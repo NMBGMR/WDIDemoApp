@@ -1,5 +1,5 @@
 runtime: nodejs12
-
+service: default
 handlers:
   - url: /static/js/(.*)
     static_files: build/static/js/\1
