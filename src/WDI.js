@@ -3,7 +3,6 @@ import axios from "axios";
 
 import DatastreamsTable from './datastreams_table'
 import ThingsTable from './thing_table'
-import DatastreamChart from './datastream_chart'
 import ThingsMap from './map'
 import ObservationsTable from "./observations_table";
 import LocationsTable from "./locations_table";
@@ -11,6 +10,9 @@ import retrieveItems from './util'
 import DatePicker from "react-datepicker";
 
 import "react-datepicker/dist/react-datepicker.css";
+import DSChart from "./ds_chart";
+import MapCountyFilter from "./mapcountyfilter";
+import CONSTANTS from "./constants";
 
 
 class WDI extends Component {
@@ -27,7 +29,8 @@ class WDI extends Component {
             selected_link: null,
             obs_limit: '',
             nobs_limit: 0,
-            obs_order: 'asc'
+            obs_order: 'asc',
+            selectedCounties: null
         }
     }
 
@@ -103,14 +106,39 @@ class WDI extends Component {
         this.loadObservations(null, null, null, event.target.value)
     }
 
+    handleCountyChange=counties=>{
+        if(counties){
+            let i;
+            console.log(counties)
+
+            let pts = counties.features[0].geometry.coordinates[0][0]
+            let pg = "'POLYGON(("
+            for (i=0; i<pts.length-1; i++){
+                console.log(pts[i])
+                pg+=pts[i][0] + ' '+pts[i][1]+','}
+            pg+=pts[i][0] + ' '+pts[i][1]+ "))')"
+            let url = CONSTANTS.NM_NGWMN_ST_URL +"Locations?$filter=st_within(location, geography"+pg
+            axios.get(url).then(success=>{
+              console.log(success.data)
+              this.setState({selectedCounties: counties,
+                            selectedPoints: pts})
+             })
+        }
+    }
+
     render() {
         return (
             <div>
                 <div className="hcontainer" style={{ marginTop: 50}}>
+                    <div className='group'>
+                        <MapCountyFilter
+                        handleCountyChange={this.handleCountyChange}
+                        />
+                    </div>
                     <div className="divL">
                         <ThingsMap
-                            // center={[34.359593, -106.906871]}
                             zoom={6}
+                            selectedCounties={this.state.selectedCounties}
                             onSelect={e => {
                                 axios.get(e.target.options.properties.link).then(res => {
                                         this.setState({locations: [{id: res.data['@iot.id'],
@@ -137,10 +165,16 @@ class WDI extends Component {
                         />
                         <div className={'group'}>
                             <div className='chart'>
-                                <DatastreamChart
+                                <DSChart
                                     datastream = {this.state.datastream}
                                     observations={this.state.observations}/>
                             </div>
+
+                            {/*<div className='chart'>*/}
+                            {/*    <DatastreamChart*/}
+                            {/*        datastream = {this.state.datastream}*/}
+                            {/*        observations={this.state.observations}/>*/}
+                            {/*</div>*/}
                         </div>
 
 

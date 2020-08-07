@@ -1,25 +1,23 @@
 
 import React, {Component} from 'react'
-import {Map, CircleMarker, TileLayer, LayersControl, LayerGroup, FeatureGroup} from "react-leaflet";
+import {Map, CircleMarker, TileLayer, LayersControl, LayerGroup, FeatureGroup, GeoJSON} from "react-leaflet";
 import axios from 'axios';
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
-// import * as nmbg from './nmbg_locations.json'
-// import * as ngwmn from './usgs_ngwmn_locations.json'
 import * as nmbg from './local_locations.json'
 import {EditControl} from "react-leaflet-draw";
 import retrieveItems from "./util";
 import MapSaveDialog from "./map_save_dialog";
 import MapFilter from "./mapfilter"
-
+import CONSTANTS from "./constants";
 const LOCAL = false
 
 
 const { BaseLayer, Overlay } = LayersControl
 
-const usgs_ngwm_base = 'https://frost-nm.internetofwater.dev/api/v1.0/'
+// const usgs_ngwm_base = 'https://frost-nm.internetofwater.dev/api/v1.0/'
 // const nmbg_base = 'http://104.196.225.45/v1.0/'
-const  nmbg_base = 'http://34.106.252.186/FROST-Server/v1.1/'
+// const  nmbg_base = 'http://st.newmexicowaterdata.org/FROST-Server/v1.1/'
 
 function saveFile(txt, name){
     const blob = new Blob([txt], { type: 'text/csv;charset=utf-8;' });
@@ -40,6 +38,23 @@ function storageURL(name, gen){
     return STORAGE_BASE+BUCKET+'o/'+name+'?'+'generation='+gen+'&alt=media'
 
 }
+
+function overlay(name, data, onClick, color, checked){
+    return <Overlay checked={checked} name={name}>
+                <LayerGroup>
+                    {data ? data.map(l=>(
+                        <CircleMarker
+                            radius={5}
+                            key={l.link}
+                            color={color}
+                            onClick={onClick}
+                            center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
+                            properties={l}/>
+                    )):null}
+                </LayerGroup>
+            </Overlay>
+}
+
 class ThingsMap extends Component{
     state = {
         hasLocation: false,
@@ -54,7 +69,8 @@ class ThingsMap extends Component{
         filter_str: '1950',
         filter_comp: 'gt',
         filter_attr: 'observation_date',
-        center: [34.359593, -106.906871]
+        center: [34.359593, -106.906871],
+        selectedPoints: null
     }
 
     componentDidMount() {
@@ -257,11 +273,11 @@ class ThingsMap extends Component{
                         cb(f)
                     })
                 }
-                datafilter(usgs_ngwm_base,
+                datafilter(CONSTANTS.NM_NGWMN_ST_URL,
                     this.state.filter_comp,
                     this.state.filter_str,
                     f=>(this.setState({usgs_ngwmn_data: this.state.ousgs_ngwmn_data.filter(f)})))
-                datafilter(nmbg_base,
+                datafilter(CONSTANTS.NMBG_ST_URL,
                     this.state.filter_comp,
                     this.state.filter_str,
                     f=>(this.setState({nmbg_wl_data: this.state.onmbg_wl_data.filter(f)})))
@@ -280,7 +296,6 @@ class ThingsMap extends Component{
 
     }
 
-
     handleStr = e=>{
         this.setState({filter_str: e.target.value})
     }
@@ -292,6 +307,13 @@ class ThingsMap extends Component{
     }
 
     render() {
+        // if(this.props.selectedCounties){
+        //     var i;
+        //     for (i=0; i<this.props.selectedCounties.features.length; i++){
+        //         console.log(this.props.selectedCounties.features[i])
+        //     }
+        // }
+
         return (
             <div className={'group'}>
                 <MapSaveDialog open={this.state.show_save_modal}
@@ -305,7 +327,8 @@ class ThingsMap extends Component{
                     handleStr={this.handleStr}
                     handleComp={this.handleComp}
                     handleFilter={this.handleFilter}
-                    handleClear={this.handleClear}/>
+                    handleClear={this.handleClear}
+                />
                 <div className={'subgroup'}>
 
                 <Map center={this.state.center}
@@ -331,6 +354,12 @@ class ThingsMap extends Component{
 
                         />
                     </FeatureGroup>
+
+                    <GeoJSON key={this.props.selectedCounties?this.props.selectedCounties.features.length:-1}
+                        data={this.props.selectedCounties}/>
+
+                    <GeoJSON data={this.state.selectedPoints}/>
+
                     <LayersControl position="topright">
                         <BaseLayer name='OpenStreetMap'>
                             <TileLayer
@@ -375,129 +404,57 @@ class ThingsMap extends Component{
                             />
 
                         </BaseLayer>
-                        <Overlay checked name='USGS NGWMN'>
-                            <LayerGroup>
-                                {this.state.usgs_ngwmn_data ? this.state.usgs_ngwmn_data.map(l=>(
-                                    <CircleMarker
-                                        radius={5}
-                                        key={l.link}
-                                        color={'blue'}
-                                        onClick={this.props.onSelect}
-                                        center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
-                                        properties={l}/>
-                                )):null}
-                            </LayerGroup>
-                        </Overlay>
-                        <Overlay checked name="WaterLevelCABQ">
-                            <LayerGroup>
-                                {this.state.cabq_data ? this.state.cabq_data.map(l => (
-                                    <CircleMarker
-                                        radius={5}
-                                        key={l.link}
-                                        color={'#fce066'}
-                                        onClick={this.props.onSelect}
-                                        center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
-                                        properties={l}/>
-                                )): null}
-                            </LayerGroup>
 
-                        </Overlay>
-                        <Overlay checked name="NMBG WaterLevelPressure">
-                            <LayerGroup>
-                                {this.state.nmbg_wl_data ? this.state.nmbg_wl_data.map(l => (
-                                    <CircleMarker
-                                        radius={5}
-                                        key={l.link}
-                                        color={'green'}
-                                        onClick={this.props.onSelect}
-                                        center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
-                                        properties={l}/>
-                                )): null}
-                            </LayerGroup>
+                        {overlay('USGS NGWMN',
+                            this.state.usgs_ngwmn_data,
+                            this.props.onSelect,
+                            'blue',
+                            true)}
 
-                        </Overlay>
-                        <Overlay checked name="NMBG Arsenic">
-                            <LayerGroup>
-                                {this.state.nmbg_arsenic ? this.state.nmbg_arsenic.map((l, index) => (
-                                    <CircleMarker
-                                        radius={3}
-                                        key={index}
-                                        color={'red'}
-                                        onClick={this.props.onSelect}
-                                        center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
-                                        properties={l}
-                                    >
-                                    </CircleMarker>
-                                )): null
-                                }
-                            </LayerGroup>
-                        </Overlay>
-                        <Overlay checked name="NMBG HCO3">
-                            <LayerGroup>
-                                {this.state.nmbg_hco3 ? this.state.nmbg_hco3.map((l, index) => (
-                                    <CircleMarker
-                                        radius={3}
-                                        key={index}
-                                        color={'purple'}
-                                        onClick={this.props.onSelect}
-                                        center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
-                                        properties={l}
-                                    >
-                                    </CircleMarker>
-                                )): null
-                                }
-                            </LayerGroup>
-                        </Overlay>
-                        <Overlay checked name="NMBG Ca">
-                            <LayerGroup>
-                                {this.state.nmbg_ca ? this.state.nmbg_ca.map((l, index) => (
-                                    <CircleMarker
-                                        radius={3}
-                                        key={index}
-                                        color={'orange'}
-                                        onClick={this.props.onSelect}
-                                        center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
-                                        properties={l}
-                                    >
-                                    </CircleMarker>
-                                )): null
-                                }
-                            </LayerGroup>
-                        </Overlay>
-                        <Overlay checked name="NMBG TDS">
-                            <LayerGroup>
-                                {this.state.nmbg_tds ? this.state.nmbg_tds.map((l, index) => (
-                                    <CircleMarker
-                                        radius={3}
-                                        key={index}
-                                        color={'lightblue'}
-                                        onClick={this.props.onSelect}
-                                        center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
-                                        properties={l}
-                                    >
-                                    </CircleMarker>
-                                )): null
-                                }
-                            </LayerGroup>
-                        </Overlay>
+                        {/*<Overlay checked name="WaterLevelCABQ">*/}
+                        {/*    <LayerGroup>*/}
+                        {/*        {this.state.cabq_data ? this.state.cabq_data.map(l => (*/}
+                        {/*            <CircleMarker*/}
+                        {/*                radius={5}*/}
+                        {/*                key={l.link}*/}
+                        {/*                color={'#fce066'}*/}
+                        {/*                onClick={this.props.onSelect}*/}
+                        {/*                center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}*/}
+                        {/*                properties={l}/>*/}
+                        {/*        )): null}*/}
+                        {/*    </LayerGroup>*/}
+                        {/*</Overlay>*/}
 
-                        <Overlay checked name="OSE POD">
-                            <LayerGroup>
-                                {this.state.ose_pod_data ? this.state.ose_pod_data.map((l, index) => (
-                                    <CircleMarker
-                                        radius={3}
-                                        key={index}
-                                        color={'violet'}
-                                        onClick={this.props.onSelect}
-                                        center={[l.geometry.coordinates[1], l.geometry.coordinates[0]]}
-                                        properties={l}
-                                    >
-                                    </CircleMarker>
-                                )): null
-                                }
-                            </LayerGroup>
-                        </Overlay>
-
+                        {overlay("NMBG WaterLevelPressure",
+                                  this.state.nmbg_wl_data,
+                                  this.props.onSelect,
+                                  'green',
+                                  false)}
+                        {overlay("NMBG Arsenic",
+                                 this.state.nmbg_arsenic,
+                                 this.props.onSelect,
+                            'red',
+                            false)}
+                        {overlay('NMBG HCO3',
+                                this.state.nmbg_hco3,
+                                this.props.onSelect,
+                            'purple',
+                            false)}
+                        {overlay('NMBG Ca',
+                                this.state.nmbg_ca,
+                                this.props.onSelect,
+                            'orange',
+                            false)}
+                        {overlay('NMBG TDS',
+                                this.state.nmbg_tds,
+                                this.props.onSelect,
+                            'lightblue',
+                            false)}
+                        {overlay('OSE POD',
+                        this.state.ose_pod_data,
+                        this.props.onSelect,
+                            'violet',
+                            false)}
                     </LayersControl>
                 </Map>
                 </div>
