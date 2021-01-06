@@ -1,6 +1,7 @@
 import React, {Component} from 'react'
 import axios from 'axios';
 import SelectableTable from "./tables/selectable_table";
+const height=520
 
 class MapCountyFilter extends Component {
     constructor(props) {
@@ -8,6 +9,7 @@ class MapCountyFilter extends Component {
         this.state = {counties: null}
 
     }
+
     componentDidMount() {
         axios.get('https://info.geoconnex.us/collections/counties/items?STATEFP=35&f=json').then(success=>{
             var counties = success.data.features.map(f=>(
@@ -44,20 +46,26 @@ class MapCountyFilter extends Component {
             .filter(f=>(f.isSelected))
             .map(f=>(f.value))
         selected.forEach(c=>{delete c.id})
+        // this.setState({'selected_counties': selected})
         this.props.handleCountyChange({'type': 'FeatureCollection', 'features': selected})
     }
 
-    render() {
+    onSearch =e=>{
+        this.props.handleCountySearch()
+    }
 
+    render() {
         const columns = [{'label': 'County', 'key': 'link'},
                          // {'label': 'Link', 'key': 'link'}
                          ]
 
-        return <div className={'subgroup'}>
+        return <div className={'subgroup'} style={{height: height}}>
+            <button onClick={this.onSearch}>SearchByCounty</button>
             <SelectableTable
                 columns = {columns}
                 items = {this.state['counties']}
                 onSelect = {this.onSelect}
+                height={height-20}
             />
 
             {/*<label>County  </label>*/}

@@ -1,15 +1,16 @@
 const fs = require('fs');
 const axios =require('axios');
-// const base = 'http://104.196.225.45/v1.0'
 // const base = 'https://st.newmexicowaterdata.org/FROST-Server/v1.1'
-const base = 'https://ose.newmexicowaterdata.org/FROST-Server/v1.1'
-// const base = 'http://localhost:8080/v1.0'
+const base = 'https://nm.ngwmn.internetofwater.dev/api/v1.1'
+// const base = 'https://ose.newmexicowaterdata.org/FROST-Server/v1.1'
 // const base = 'https://frost-nm.internetofwater.dev/api/v1.0'
-// const path = '../data/nmbg_locations_things_datastreams.json'
-const path = '../data/ose_locations_things_datastreams.json'
+// const path = './data/nmbg_locations_things_datastreams.json'
+const path = './data/ngwmn_locations_things_datastreams.json'
+// const path = './data/ose_locations_things_datastreams.json'
 
 
 const getItems = (url, items, resolve, reject) =>{
+    console.log(url)
     axios.get(url).then(response=>{
         const ritems = items.concat(response.data.value)
         if (response.data['@iot.nextLink']!=null){
@@ -22,9 +23,7 @@ const getItems = (url, items, resolve, reject) =>{
 
 new Promise((resolve, reject) => {
     // getItems(base+'/Locations?$expand=Things', [], resolve, reject)}).then(response=>{
-    getItems(base+'/Locations?$expand=Things/Datastreams', [], resolve, reject)}).then(response=>{
-        console.log(response)
-
+    getItems(base+"/Locations?$expand=Things/Datastreams/Sensor", [], resolve, reject)}).then(response=>{
     fs.writeFileSync(path,  JSON.stringify({type: 'FeatureCollection',
                                                   features: response.map( loc => (
                                                       {
@@ -33,13 +32,14 @@ new Promise((resolve, reject) => {
                                                           things: loc.Things.map(t=> (
                                                               {
                                                                   name: t['name'],
-                                                                  description: t['description'],
-                                                                  properties: t['properties'],
+                                                                  // description: t['description'],
+                                                                  // properties: t['properties'],
                                                                   datastreams: t['Datastreams'].map(d=>(
                                                                       {
                                                                           name: d['name'],
-                                                                          description: d['description'],
-                                                                          link: d['@iot.selfLink']
+                                                                          sensor: d['Sensor']['name']
+                                                                          // description: d['description'],
+                                                                          // link: d['@iot.selfLink']
                                                                       }
                                                                   ))
                                                               })),

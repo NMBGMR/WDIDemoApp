@@ -42,6 +42,16 @@ function ObservationsTable(props){
         hiddenElement.click();
     }
 
+    const formatResult = (r)=>{
+        let f
+        if (r instanceof Number){
+            f=r.toFixed(2)
+        }else{
+            f = r
+        }
+
+        return f
+    }
     return (
         <div>
             <button onClick={exportCSV} >Export CSV</button>
@@ -62,7 +72,7 @@ function ObservationsTable(props){
                                         key={index}
                                         hover>
                                         <TableCell style={dense}>{r.phenomenonTime}</TableCell>
-                                        <TableCell style={dense}>{r.result.toFixed(2)}</TableCell>
+                                        <TableCell style={dense}>{formatResult(r.result)}</TableCell>
                                     </TableRow>
                                 )})
                         }

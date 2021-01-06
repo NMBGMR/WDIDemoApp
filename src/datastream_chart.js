@@ -24,7 +24,7 @@ class DatastreamChart extends Component {
             <div className='chart'>
                 <ResponsiveLine
                     data={dd}
-                    margin={{ top: 50, right: 50, bottom: 50, left: 80}}
+                    // margin={{ top: 50, right: 50, bottom: 50, left: 80}}
                     xScale={{ type: 'time'}}
                     xFormat="time:%Y-%m-%d %H:%M"
                     yFormat={(v)=>(v.toFixed(2))}

@@ -51,7 +51,8 @@ function SelectableTable(props){
     const data = props.items ? props.items : []
 
     return (
-        <TableContainer component={Paper}>
+        <div  >
+            <TableContainer component={Paper}  style={{ overflow: "auto", height: props.height}}>
             <Table size='small' aria-label="a dense table">
                 <TableHead>
                     <TableRow>
@@ -87,6 +88,8 @@ function SelectableTable(props){
                 </TableBody>
             </Table>
         </TableContainer>
+        </div>
+
     )
 
 }

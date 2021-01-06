@@ -24,11 +24,11 @@ class WDI extends Component {
             locations: [],
             thing: '',
             location: '',
-            startDate: new Date(),
-            endDate: new Date(),
+            startDate: null,
+            endDate: null,
             selected_link: null,
-            obs_limit: '',
-            nobs_limit: 0,
+            obs_limit: '100',
+            nobs_limit: 100,
             obs_order: 'asc',
             selectedCounties: null
         }
@@ -60,7 +60,7 @@ class WDI extends Component {
                                         observationsExportPath: ep,
                                         datastream: selection.row,
                                         selected_link: selection.row.link,
-                                        startDate: dates[0],
+                                        // startDate: dates[0],
                                         endDate: dates[dates.length-1]})})
             } else { this.setState({observations: null, datastream: null, observationsExportPath:null}) }
         } else { this.setState({observations: null, datastream: null, observationsExportPath:null}) }
@@ -72,73 +72,63 @@ class WDI extends Component {
             end = end? end: this.state.endDate
             limit = limit? limit: this.state.nobs_limit
             order = order? order: this.state.obs_order
-            const url =this.state.selected_link+'/Observations?$orderby=phenomenonTime '+ order +
-                '&$filter=phenomenonTime gt '+start.toISOString() +
-                ' and phenomenonTime lt '+end.toISOString()
-            console.log(url)
+
+            let url =this.state.selected_link+'/Observations?$orderby=phenomenonTime '+ order + '&$filter='
+
+            if (start!=null){
+                url +='phenomenonTime ge '+start.toISOString() +
+                ' and phenomenonTime le '+end.toISOString()
+            }
+            else{
+                url +='phenomenonTime le '+end.toISOString()
+            }
+
+            console.log('uouououo', limit, url)
             retrieveItems(url,
                 limit,
-                (result)=>{this.setState({observations: result})})
+                (result)=>{
+                                     this.setState({observations: result})})
         }
+    }
+
+    onApplyFilter(event){
+        this.loadObservations(null, null, null, null)
     }
 
     handleStartPost(date) {
         this.setState({'startDate': date})
-        this.loadObservations(date, null, null, null)
 
     }
-
     handleEndPost(date) {
         this.setState({'endDate': date})
-        this.loadObservations(null, date, null, null)
     }
-
     handleLimit(event) {
         let l = event.target.value
         let n = l? parseInt(l): -1
 
-        this.setState({nobs_limit: n, obs_limit: l});
-        this.loadObservations(null, null, n, null)
+        this.setState({nobs_limit: n, obs_limit: l})
     }
-
     handleOrder(event){
         this.setState({obs_order: event.target.value})
-        this.loadObservations(null, null, null, event.target.value)
     }
 
-    handleCountyChange=counties=>{
-        if(counties){
-            let i;
-            console.log(counties)
-
-            let pts = counties.features[0].geometry.coordinates[0][0]
-            let pg = "'POLYGON(("
-            for (i=0; i<pts.length-1; i++){
-                console.log(pts[i])
-                pg+=pts[i][0] + ' '+pts[i][1]+','}
-            pg+=pts[i][0] + ' '+pts[i][1]+ "))')"
-            let url = CONSTANTS.NM_NGWMN_ST_URL +"Locations?$filter=st_within(location, geography"+pg
-            axios.get(url).then(success=>{
-              console.log(success.data)
-              this.setState({selectedCounties: counties,
-                            selectedPoints: pts})
-             })
-        }
-    }
 
     render() {
+
+        console.log('kkk', this.state.observations)
         return (
             <div>
                 <div className="hcontainer" style={{ marginTop: 50}}>
-                    <div className='group'>
-                        <MapCountyFilter
-                        handleCountyChange={this.handleCountyChange}
-                        />
-                    </div>
+                    {/*<div className='group'>*/}
+                    {/*    <MapCountyFilter*/}
+                    {/*        // handleCountySearch={this.handleCountySearch}*/}
+                    {/*        // handleCountyChange={this.handleCountyChange}*/}
+                    {/*    />*/}
+                    {/*</div>*/}
                     <div className="divL">
                         <ThingsMap
                             zoom={6}
-                            selectedCounties={this.state.selectedCounties}
+                             // selectedCounties={this.state.selectedCounties}
                             onSelect={e => {
                                 axios.get(e.target.options.properties.link).then(res => {
                                         this.setState({locations: [{id: res.data['@iot.id'],
@@ -156,9 +146,18 @@ class WDI extends Component {
                                         point_id:v.properties ? v.properties['@nmbgmr.point_id']: ''
                                     }))
 
-                                    this.setState({things: things,
-                                        datastreams: null,
-                                        observations: null})
+                                    axios.get(things[0].link+'/Datastreams').then(
+                                             res => {
+                                            this.setState({ things: things,
+                                                                  datastreams: res.data.value.map(v => ({id: v['@iot.id'],
+                                                                  name: v.name,
+                                                                  unit: v.unitOfMeasurement.name,
+                                                                  link:v['@iot.selfLink']}))})})
+
+
+                                    // this.setState({things: things,
+                                    //     datastreams: null,
+                                    //     observations: null})
                                 })
 
                             }}
@@ -232,6 +231,7 @@ class WDI extends Component {
                                         <option value="desc">Descending</option>
                                     </select>
                                 </form>
+                                <button onClick={(event)=>this.onApplyFilter(event)}>Apply Filter</button>
                             </div>
 
                         </div>
